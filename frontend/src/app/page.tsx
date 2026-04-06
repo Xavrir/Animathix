@@ -1,207 +1,253 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Navbar from "@/components/ui/Navbar";
+import Footer from "@/components/ui/Footer";
 
-const BrainScene = dynamic(
-  () => import("@/components/hero/BrainScene"),
+const steps = [
   {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="w-12 h-12 rounded-full border border-cyan/20 animate-synapse" />
-      </div>
-    ),
-  }
-);
+    number: "01",
+    title: "Capture the problem",
+    desc: "Drop in a theorem, worksheet, or document. Animathix finds the mathematical spine of the idea.",
+  },
+  {
+    number: "02",
+    title: "Map the visual intuition",
+    desc: "AI structures the explanation scene by scene — graphs, geometry, and transformations carry the understanding.",
+  },
+  {
+    number: "03",
+    title: "Render the explanation",
+    desc: "Manim and Kokoro produce a narrated film that teaches with motion, pacing, and clarity.",
+  },
+];
 
 export default function LandingPage() {
   return (
-    <main className="relative min-h-screen flex flex-col">
-      {/* Background radial glow */}
-      <div
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 50% 40%, rgba(0,240,255,0.04) 0%, transparent 70%)",
-        }}
-      />
+    <main className="relative min-h-screen">
+      <Navbar />
 
-      {/* Navigation */}
-      <nav className="relative z-20 flex items-center justify-between px-8 py-6">
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
+      {/* ── Hero ── */}
+      <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Video background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: 0.45, objectPosition: "60% center" }}
         >
-          <span className="heading-bio text-xl text-cyan-gradient">Animathix</span>
-        </motion.div>
+          <source src="/hero-philosopher.mp4" type="video/mp4" />
+        </video>
 
-        <motion.div
-          initial={{ opacity: 0, x: 10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="flex items-center gap-6"
-        >
-          <Link
-            href="/login"
-            className="text-text-dim text-sm hover:text-text transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/login"
-            className="border border-cyan/30 px-5 py-2 text-sm text-cyan hover:bg-cyan/8 hover:border-cyan/50 transition-all"
-          >
-            Get Started
-          </Link>
-        </motion.div>
-      </nav>
+        {/* Gradient overlays for depth + text readability */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to right, #0c0b09 0%, rgba(12,11,9,0.88) 30%, rgba(12,11,9,0.4) 60%, rgba(12,11,9,0.15) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to top, #0c0b09 0%, transparent 35%, transparent 80%, rgba(12,11,9,0.6) 100%)",
+          }}
+        />
 
-      {/* Hero */}
-      <section className="relative flex-1 flex flex-col items-center justify-center">
-        {/* 3D Brain */}
-        <div className="absolute inset-0 z-0">
-          <BrainScene />
-        </div>
+        {/* Content */}
+        <div className="relative z-10 mx-auto max-w-6xl w-full px-6 md:px-10 py-32">
+          <div className="max-w-xl">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-6"
+            >
+              <div className="accent-rule mb-5" />
+              <span className="section-label text-bronze/70">
+                AI-powered mathematical cinematics
+              </span>
+            </motion.div>
 
-        {/* Text overlay */}
-        <div className="relative z-10 text-center px-6 max-w-3xl">
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.3 }}
-            className="text-cyan-dim tracking-[0.25em] uppercase text-xs font-medium mb-5"
-          >
-            AI-Powered Math Videos
-          </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.1 }}
+              className="heading-editorial text-5xl md:text-6xl lg:text-[4.5rem] mb-6"
+            >
+              Watch the logic
+              <br />
+              become visible.
+            </motion.h1>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.5 }}
-            className="heading-bio text-5xl md:text-7xl lg:text-8xl text-cyan-gradient mb-7 leading-tight"
-          >
-            Animathix
-          </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-lg leading-relaxed text-text-secondary max-w-md mb-10"
+            >
+              Animathix turns dense math questions into explainable animated
+              films — with graphs, narration, and pacing that make concepts
+              click.
+            </motion.p>
 
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.8 }}
-            className="text-text-dim text-lg md:text-xl leading-relaxed max-w-xl mx-auto mb-10"
-          >
-            Transform any math question into a beautifully animated
-            explainer video — with narration that brings concepts to life.
-          </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-wrap items-center gap-4"
+            >
+              <Link href="/login" className="btn-primary">
+                Start Creating
+              </Link>
+              <Link href="#how-it-works" className="btn-secondary">
+                How It Works
+              </Link>
+            </motion.div>
+          </div>
 
+          {/* Stat cards */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 1.1 }}
-            className="flex items-center justify-center gap-4"
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl"
           >
-            <Link
-              href="/login"
-              className="relative group overflow-hidden border border-cyan/40 px-8 py-3.5 text-sm tracking-wider uppercase text-cyan hover:text-abyss transition-colors duration-500"
-            >
-              <div className="absolute inset-0 bg-cyan -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-              <span className="relative z-10 font-medium">Start Creating</span>
-            </Link>
-
-            <Link
-              href="#features"
-              className="px-6 py-3.5 text-sm text-text-dim hover:text-text transition-colors"
-            >
-              Learn More
-            </Link>
+            {[
+              { label: "Inputs", value: "Questions, PDFs, LaTeX" },
+              { label: "Output", value: "Narrated explainer videos" },
+              { label: "Engine", value: "Manim + Kokoro TTS" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="px-5 py-4 rounded-xl border border-border/60 backdrop-blur-sm"
+                style={{ background: "rgba(12, 11, 9, 0.7)" }}
+              >
+                <p className="section-label mb-1 text-bronze/60">{s.label}</p>
+                <p className="text-sm text-charcoal">{s.value}</p>
+              </div>
+            ))}
           </motion.div>
         </div>
-
-        {/* Scroll line */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.3 }}
-          transition={{ delay: 2 }}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2"
-        >
-          <div className="w-px h-10 bg-gradient-to-b from-cyan/40 to-transparent" />
-        </motion.div>
       </section>
 
-      {/* Features section */}
-      <section id="features" className="relative z-10 px-6 py-28 max-w-5xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <h2 className="heading-bio text-3xl md:text-4xl text-cyan-gradient mb-3">
-            How It Works
-          </h2>
-          <p className="text-text-dim max-w-lg mx-auto">
-            From question to video in minutes — powered by AI that understands mathematics.
-          </p>
-        </motion.div>
+      {/* ── How it works ── */}
+      <section
+        id="how-it-works"
+        className="relative z-10 border-t border-border/50"
+      >
+        <div className="mx-auto max-w-6xl px-6 py-20 md:px-10 lg:py-28">
+          <div className="max-w-md mb-14">
+            <div className="accent-rule mb-5" />
+            <h2 className="heading-editorial text-3xl md:text-4xl mb-4">
+              From notation to narrative.
+            </h2>
+            <p className="text-text-secondary leading-relaxed">
+              Three steps between your question and a shareable animated lesson.
+            </p>
+          </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            {
-              step: "01",
-              title: "Ask Anything",
-              desc: "Type a math question, paste LaTeX, or upload a document. From algebra to calculus.",
-            },
-            {
-              step: "02",
-              title: "AI Animates",
-              desc: "Our AI breaks down the concept, designs visuals, writes code, and renders the animation.",
-            },
-            {
-              step: "03",
-              title: "Watch & Learn",
-              desc: "Get a narrated video with step-by-step visual explanations you can download and share.",
-            },
-          ].map((item, i) => (
-            <motion.div
-              key={item.step}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: i * 0.15 }}
-              viewport={{ once: true }}
-              className="glass-card p-8"
-            >
-              <span className="text-cyan/30 text-xs tracking-[0.3em] uppercase">{item.step}</span>
-              <h3 className="heading-bio text-xl text-text mt-3 mb-2">{item.title}</h3>
-              <p className="text-text-dim text-sm leading-relaxed">{item.desc}</p>
-            </motion.div>
-          ))}
+          <div className="grid gap-6 md:grid-cols-3">
+            {steps.map((step, i) => (
+              <motion.div
+                key={step.number}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                viewport={{ once: true, margin: "-60px" }}
+                className="card px-6 py-6"
+              >
+                <span className="text-xs font-medium text-bronze/50 tracking-wider">
+                  {step.number}
+                </span>
+                <h3 className="heading-editorial text-xl mt-2 mb-3">
+                  {step.title}
+                </h3>
+                <p className="text-sm leading-relaxed text-text-secondary">
+                  {step.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          viewport={{ once: true }}
-          className="text-center mt-16"
-        >
-          <Link
-            href="/login"
-            className="inline-block border border-cyan/30 px-8 py-3 text-sm text-cyan hover:bg-cyan/8 hover:border-cyan/50 transition-all tracking-wider uppercase"
-          >
-            Try It Free
-          </Link>
-        </motion.div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-cyan/6 py-6 text-center">
-        <p className="text-text-dim/30 text-xs tracking-[0.15em] uppercase">
-          Animathix &mdash; Where Mathematics Comes Alive
-        </p>
-      </footer>
+      {/* ── Why different ── */}
+      <section className="relative z-10 border-t border-border/50">
+        <div className="mx-auto max-w-6xl px-6 py-20 md:px-10 lg:py-28">
+          <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
+            <div>
+              <div className="accent-rule mb-5" />
+              <h2 className="heading-editorial text-3xl md:text-4xl mb-4">
+                Most tools summarize.
+                <br />
+                This one choreographs.
+              </h2>
+              <p className="text-text-secondary leading-relaxed max-w-md">
+                The viewer sees why it works, where it comes from, and how the
+                intuition builds — not just the answer on a screen.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                "Built for explanation-first math videos, not generic text recaps.",
+                "Designed around visual intuition, scene transitions, and structured narration.",
+                "Made for students, educators, and anyone who wants the idea to actually click.",
+              ].map((note, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: 10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: i * 0.1 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  className="flex items-start gap-3 card px-5 py-4"
+                >
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-bronze flex-shrink-0" />
+                  <p className="text-sm leading-relaxed text-text-secondary">
+                    {note}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="relative z-10 border-t border-border/50">
+        <div
+          className="mx-auto max-w-6xl px-6 py-20 md:px-10 text-center"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 80% at 50% 50%, rgba(176,141,87,0.04) 0%, transparent 70%)",
+          }}
+        >
+          <div className="accent-rule mx-auto mb-6" />
+          <h2 className="heading-editorial text-3xl md:text-4xl mb-4">
+            Build the explanation you wish you had.
+          </h2>
+          <p className="text-text-secondary max-w-md mx-auto mb-8">
+            Start with a single question and end with a shareable animated
+            lesson.
+          </p>
+          <div className="flex justify-center gap-4">
+            <Link href="/login" className="btn-primary">
+              Try It Free
+            </Link>
+            <Link href="/login" className="btn-secondary">
+              Sign In
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
     </main>
   );
 }

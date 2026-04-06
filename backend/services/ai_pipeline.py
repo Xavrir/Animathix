@@ -639,7 +639,6 @@ def generate_fallback_manim_code(plan: NarrationPlan) -> str:
     """Build a 3Blue1Brown-style Manim scene with on-screen explanations.
 
     Every scene shows:
-    - A subtitle bar at the bottom with the narration text
     - Visual elements (shapes, graphs, diagrams) in the center
     - Explanatory labels alongside the visuals
 
@@ -665,19 +664,7 @@ def generate_fallback_manim_code(plan: NarrationPlan) -> str:
     scene_blocks = []
     for i, scene in enumerate(scenes):
         narr_full = _escape(scene.narration_text)
-        narr_sub = _make_subtitle(scene.narration_text, 65)
         vis_desc = _escape(scene.visual_description or "")[:60]
-
-        # Helper: subtitle bar that appears at bottom of every scene
-        sub_block = f'''
-            # Subtitle narration
-            sub = Text("{narr_sub}", font_size=18, color=WHITE,
-                       weight=LIGHT).to_edge(DOWN, buff=0.4)
-            sub.set_opacity(0.85)
-            sub_bg = Rectangle(
-                width=config.frame_width, height=0.7,
-                fill_color=BLACK, fill_opacity=0.6, stroke_width=0,
-            ).to_edge(DOWN, buff=0)'''
 
         if i == 0:
             # Scene 1: Title card + concept introduction
@@ -699,9 +686,6 @@ def generate_fallback_manim_code(plan: NarrationPlan) -> str:
             desc.next_to(heading, DOWN, buff=1.2)
             if desc.width > config.frame_width - 2:
                 desc.set(width=config.frame_width - 2)
-{sub_block}
-
-            self.play(FadeIn(sub_bg), Write(sub), run_time=0.5)
             self.play(Write(heading), run_time=tracker.duration * 0.3)
             self.play(Create(underline), run_time=tracker.duration * 0.15)
             self.play(FadeIn(desc), run_time=tracker.duration * 0.25)
@@ -731,9 +715,6 @@ def generate_fallback_manim_code(plan: NarrationPlan) -> str:
 
             check_mark = Text(">>", font_size=26, color=GREEN)
             check_mark.next_to(result_box, LEFT, buff=0.3)
-{sub_block}
-
-            self.play(FadeIn(sub_bg), Write(sub), run_time=0.5)
             self.play(Write(takeaway_label), run_time=tracker.duration * 0.15)
             self.play(Create(result_box), run_time=tracker.duration * 0.2)
             self.play(Write(takeaway_text), run_time=tracker.duration * 0.3)
@@ -769,9 +750,6 @@ def generate_fallback_manim_code(plan: NarrationPlan) -> str:
             if explain.width > 3.5:
                 explain.set(width=3.5)
             explain.to_edge(RIGHT, buff=0.4).shift(DOWN * 0.5)
-{sub_block}
-
-            self.play(FadeIn(sub_bg), Write(sub), run_time=0.5)
             self.play(Write(heading), run_time=tracker.duration * 0.1)
             self.play(Create(axes), Write(x_lab), Write(y_lab), run_time=tracker.duration * 0.2)
             self.play(Create(graph), Write(g_label), run_time=tracker.duration * 0.25)
@@ -804,9 +782,6 @@ def generate_fallback_manim_code(plan: NarrationPlan) -> str:
             if explain.width > 3.5:
                 explain.set(width=3.5)
             explain.to_edge(RIGHT, buff=0.4).shift(DOWN * 0.3)
-{sub_block}
-
-            self.play(FadeIn(sub_bg), Write(sub), run_time=0.5)
             self.play(Write(heading), run_time=tracker.duration * 0.1)
             self.play(Create(circle), run_time=tracker.duration * 0.15)
             self.play(Create(radius_line), FadeIn(dot), Write(r_label),
@@ -847,9 +822,6 @@ def generate_fallback_manim_code(plan: NarrationPlan) -> str:
             s3_text = Text("Step 3: Result", font_size=20, color=YELLOW)
             s3_text.move_to(s3_box)
             result_glow = SurroundingRectangle(s3_box, color=YELLOW, buff=0.1)
-{sub_block}
-
-            self.play(FadeIn(sub_bg), Write(sub), run_time=0.5)
             self.play(Write(heading), run_time=tracker.duration * 0.1)
             self.play(Create(s1_box), Write(s1_text), run_time=tracker.duration * 0.15)
             self.play(GrowArrow(arrow1), run_time=tracker.duration * 0.1)

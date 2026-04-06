@@ -24,33 +24,32 @@ export default function VoiceCard({
       onClick={onSelect}
       disabled={unavailable}
       className={`
-        relative text-left p-4 transition-all duration-300 border group
-        ${
-          selected
-            ? "border-cyan/40 bg-cyan/6 glow-cyan"
-            : unavailable
-              ? "border-cyan/6 bg-surface/20 opacity-45 cursor-not-allowed"
-              : "border-cyan/8 hover:border-cyan/20 bg-surface/40 cursor-pointer"
+        relative text-left p-4 rounded-xl transition-all duration-300 border group
+        ${selected
+          ? "border-indigo/40 bg-indigo/8 glow-indigo"
+          : unavailable
+            ? "border-border-light bg-surface/20 opacity-45 cursor-not-allowed"
+            : "border-border hover:border-indigo/25 bg-surface/40 cursor-pointer"
         }
       `}
     >
       {selected && (
-        <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-cyan" />
+        <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-indigo" />
       )}
 
       <p className="text-text text-sm font-medium mb-1">{voice.name}</p>
 
       <div className="flex items-center gap-2">
-        <span className="text-text-dim/40 text-xs uppercase tracking-wider">
+        <span className="text-text-muted text-xs uppercase tracking-wider">
           {voice.lang}
         </span>
-        <span className="text-[10px] px-1.5 py-0.5 border border-cyan/15 text-cyan-dim/60 uppercase tracking-wider">
+        <span className="text-[10px] px-2 py-0.5 rounded-md border border-indigo/15 text-indigo-dim uppercase tracking-wider">
           {PROVIDER_LABELS[voice.provider] || voice.provider}
         </span>
       </div>
 
       {unavailable && voice.unavailable_reason && (
-        <p className="mt-2 text-[11px] leading-relaxed text-text-dim/50">
+        <p className="mt-2 text-[11px] leading-relaxed text-text-muted">
           {voice.unavailable_reason}
         </p>
       )}
@@ -60,7 +59,7 @@ export default function VoiceCard({
         {Array.from({ length: 14 }).map((_, i) => (
           <div
             key={i}
-            className={`w-0.5 rounded-sm ${selected ? "bg-cyan" : "bg-cyan/50"}`}
+            className={`w-0.5 rounded-sm ${selected ? "bg-indigo" : "bg-indigo/50"}`}
             style={{
               height: `${20 + Math.sin(i * 0.9 + (selected ? 1 : 0)) * 60 + 20}%`,
               transition: "height 0.3s ease",

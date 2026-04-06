@@ -46,15 +46,15 @@ export default function FileUpload({
         input.click();
       }}
       className={`
-        border border-dashed transition-all duration-300 p-6 text-center cursor-pointer
-        ${isDragging ? "border-cyan/40 bg-cyan/4" : "border-cyan/12 hover:border-cyan/25"}
+        rounded-xl border border-dashed transition-all duration-300 p-6 text-center cursor-pointer
+        ${isDragging ? "border-indigo/40 bg-indigo/5" : "border-border hover:border-indigo/25 hover:bg-surface/40"}
       `}
     >
       {/* Upload icon */}
       <div className="flex justify-center mb-3">
-        <div className="w-8 h-8 rounded-full border border-cyan/20 flex items-center justify-center">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-cyan/50">
-            <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <div className="w-10 h-10 rounded-xl bg-indigo/10 border border-indigo/15 flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-indigo-light">
+            <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
       </div>
@@ -64,13 +64,13 @@ export default function FileUpload({
           {fileName}
           <button
             onClick={(e) => { e.stopPropagation(); setFileName(null); onFileSelect(null); }}
-            className="ml-3 text-cyan-dim hover:text-cyan text-xs"
+            className="ml-3 text-indigo-dim hover:text-indigo-light text-xs transition-colors"
           >
             remove
           </button>
         </p>
       ) : (
-        <p className="text-text-dim/40 text-sm">
+        <p className="text-text-muted text-sm">
           Drop a PDF here or click to upload
         </p>
       )}

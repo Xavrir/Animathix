@@ -1,0 +1,15 @@
+frontend/
+kokoro-sidecar/
+docs/
+tests/
+examples/
+dogfood-output/
+media/
+.git/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+.env
+.env.local
+node_modules/

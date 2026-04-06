@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: animathix-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: MANIM_QUALITY
+        value: medium_quality
+      - key: MEDIA_DIR
+        value: ./media
+      - key: MAX_RETRIES
+        value: "5"
+      - key: RENDER_TIMEOUT
+        value: "300"

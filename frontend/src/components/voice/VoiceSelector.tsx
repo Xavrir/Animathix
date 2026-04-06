@@ -29,30 +29,9 @@ export default function VoiceSelector({
       .then(setVoices)
       .catch(() => {
         setVoices([
-          {
-            id: "af_heart",
-            name: "Heart (Female, US)",
-            lang: "en-us",
-            provider: "kokoro",
-            available: false,
-            unavailable_reason: "Backend unavailable",
-          },
-          {
-            id: "am_adam",
-            name: "Adam (Male, US)",
-            lang: "en-us",
-            provider: "kokoro",
-            available: false,
-            unavailable_reason: "Backend unavailable",
-          },
-          {
-            id: "bf_emma",
-            name: "Emma (Female, UK)",
-            lang: "en-gb",
-            provider: "kokoro",
-            available: false,
-            unavailable_reason: "Backend unavailable",
-          },
+          { id: "af_heart", name: "Heart (Female, US)", lang: "en-us", provider: "kokoro", available: false, unavailable_reason: "Backend unavailable" },
+          { id: "am_adam", name: "Adam (Male, US)", lang: "en-us", provider: "kokoro", available: false, unavailable_reason: "Backend unavailable" },
+          { id: "bf_emma", name: "Emma (Female, UK)", lang: "en-gb", provider: "kokoro", available: false, unavailable_reason: "Backend unavailable" },
         ]);
       });
   }, []);
@@ -66,10 +45,10 @@ export default function VoiceSelector({
       transition={{ duration: 0.6 }}
       viewport={{ once: true }}
     >
-      <h2 className="heading-bio text-2xl text-cyan-gradient mb-1 text-center">
+      <h2 className="heading-display text-2xl text-gradient-indigo mb-1 text-center">
         Choose a Voice
       </h2>
-      <p className="text-text-dim/50 text-center mb-7 text-sm">
+      <p className="text-text-muted text-center mb-7 text-sm">
         Select the narrator for your video
       </p>
 
@@ -80,11 +59,10 @@ export default function VoiceSelector({
             key={p}
             onClick={() => setActiveTab(p)}
             className={`
-              px-4 py-2 text-xs tracking-[0.12em] uppercase transition-all duration-300 border cursor-pointer
-              ${
-                activeTab === p
-                  ? "border-cyan/30 text-cyan bg-cyan/6"
-                  : "border-cyan/6 text-text-dim/30 hover:text-text-dim/50 hover:border-cyan/12"
+              px-4 py-2 text-xs tracking-[0.12em] uppercase rounded-lg transition-all duration-300 border cursor-pointer
+              ${activeTab === p
+                ? "border-indigo/30 text-indigo-light bg-indigo/8"
+                : "border-border-light text-text-muted hover:text-text-secondary hover:border-indigo/15"
               }
             `}
           >

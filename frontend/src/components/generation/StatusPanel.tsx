@@ -6,42 +6,12 @@ import SpiralProgress from "./SpiralProgress";
 import type { JobStatus } from "@/lib/api";
 
 const STEPS = [
-  {
-    key: "planning",
-    label: "Analyzing",
-    description: "Breaking down your question into visual scenes",
-    icon: "🧠",
-  },
-  {
-    key: "synthesizing_audio",
-    label: "Voicing",
-    description: "Preparing Kokoro narration for each scene",
-    icon: "♪",
-  },
-  {
-    key: "generating_code",
-    label: "Composing",
-    description: "Writing animation code for each scene",
-    icon: "✦",
-  },
-  {
-    key: "rendering",
-    label: "Rendering",
-    description: "Producing your animated video frame by frame",
-    icon: "◈",
-  },
-  {
-    key: "finalizing",
-    label: "Finalizing",
-    description: "Merging audio and video into the final result",
-    icon: "⬢",
-  },
-  {
-    key: "complete",
-    label: "Done",
-    description: "Your video is ready",
-    icon: "✓",
-  },
+  { key: "planning", label: "Analyzing", description: "Breaking down your question into visual scenes", icon: "🧠" },
+  { key: "synthesizing_audio", label: "Voicing", description: "Preparing narration for each scene", icon: "♪" },
+  { key: "generating_code", label: "Composing", description: "Writing animation code for each scene", icon: "✦" },
+  { key: "rendering", label: "Rendering", description: "Producing your animated video frame by frame", icon: "◈" },
+  { key: "finalizing", label: "Finalizing", description: "Merging audio and video into the final result", icon: "⬢" },
+  { key: "complete", label: "Done", description: "Your video is ready", icon: "✓" },
 ];
 
 const TIPS = [
@@ -55,17 +25,14 @@ const TIPS = [
 
 function ElapsedTimer() {
   const [seconds, setSeconds] = useState(0);
-
   useEffect(() => {
     const interval = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(interval);
   }, []);
-
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
-
   return (
-    <span className="text-text-dim/30 text-xs tabular-nums">
+    <span className="text-text-muted text-xs font-mono-accent tabular-nums">
       {mins}:{secs.toString().padStart(2, "0")} elapsed
     </span>
   );
@@ -73,15 +40,10 @@ function ElapsedTimer() {
 
 function RotatingTip() {
   const [index, setIndex] = useState(0);
-
   useEffect(() => {
-    const interval = setInterval(
-      () => setIndex((i) => (i + 1) % TIPS.length),
-      5000
-    );
+    const interval = setInterval(() => setIndex((i) => (i + 1) % TIPS.length), 5000);
     return () => clearInterval(interval);
   }, []);
-
   return (
     <AnimatePresence mode="wait">
       <motion.p
@@ -90,7 +52,7 @@ function RotatingTip() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -6 }}
         transition={{ duration: 0.4 }}
-        className="text-text-dim/35 text-xs text-center italic leading-relaxed"
+        className="text-text-muted text-xs text-center italic leading-relaxed"
       >
         {TIPS[index]}
       </motion.p>
@@ -115,8 +77,7 @@ export default function StatusPanel({ job }: { job: JobStatus }) {
           <motion.div
             className="absolute inset-0"
             style={{
-              background:
-                "linear-gradient(90deg, transparent, #00f0ff, #39ff85, transparent)",
+              background: "linear-gradient(90deg, transparent, #b08d57, #c9a85c, transparent)",
             }}
             animate={{ x: ["-100%", "100%"] }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -124,25 +85,22 @@ export default function StatusPanel({ job }: { job: JobStatus }) {
         </div>
 
         <div className="p-8 pb-6">
-          {/* Progress ring */}
           <SpiralProgress progress={job.progress} />
 
-          {/* Current step label */}
           <motion.div
             key={job.status}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mt-6 mb-1"
           >
-            <p className="heading-bio text-xl text-cyan-gradient">
+            <p className="heading-display text-xl text-gradient-brand">
               {currentStep.label}
             </p>
-            <p className="text-text-dim/50 text-sm mt-1">
+            <p className="text-text-secondary text-sm mt-1">
               {currentStep.description}
             </p>
           </motion.div>
 
-          {/* Elapsed time */}
           <div className="text-center mt-3 mb-6">
             <ElapsedTimer />
           </div>
@@ -152,52 +110,35 @@ export default function StatusPanel({ job }: { job: JobStatus }) {
             {STEPS.map((step, i) => {
               const isDone = currentIndex > i;
               const isCurrent = currentIndex === i;
-
               return (
                 <div key={step.key} className="flex-1 flex flex-col items-center gap-2">
-                  {/* Bar segment */}
-                  <div className="w-full h-1 rounded-full overflow-hidden bg-cyan/6">
+                  <div className="w-full h-1 rounded-full overflow-hidden bg-indigo/8">
                     <motion.div
                       className="h-full rounded-full"
                       style={{
-                        background: "linear-gradient(90deg, #00f0ff, #39ff85)",
+                        background: "linear-gradient(90deg, #b08d57, #c9a85c)",
                       }}
                       initial={{ width: "0%" }}
-                        animate={{
-                          width: isDone
-                            ? "100%"
-                            : isCurrent
-                              ? `${Math.min(
-                                  Math.max(((job.progress - i * segmentSpan) / segmentSpan) * 100, 0),
-                                  95
-                                )}%`
-                              : "0%",
-                        }}
+                      animate={{
+                        width: isDone
+                          ? "100%"
+                          : isCurrent
+                            ? `${Math.min(Math.max(((job.progress - i * segmentSpan) / segmentSpan) * 100, 0), 95)}%`
+                            : "0%",
+                      }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                     />
                   </div>
-
-                  {/* Label */}
                   <div className="flex items-center gap-1">
                     <span
-                      className={`text-[10px] ${
-                        isDone
-                          ? "text-cyan/60"
-                          : isCurrent
-                            ? "text-cyan"
-                            : "text-text-dim/15"
-                      }`}
+                      className={`text-[10px] ${isDone ? "text-indigo/60" : isCurrent ? "text-indigo-light" : "text-text-muted/30"
+                        }`}
                     >
                       {step.icon}
                     </span>
                     <span
-                      className={`text-[10px] tracking-wider uppercase ${
-                        isCurrent
-                          ? "text-cyan"
-                          : isDone
-                            ? "text-cyan/40"
-                            : "text-text-dim/15"
-                      }`}
+                      className={`text-[10px] tracking-wider uppercase ${isCurrent ? "text-indigo-light" : isDone ? "text-indigo/40" : "text-text-muted/30"
+                        }`}
                     >
                       {step.label}
                     </span>
@@ -207,15 +148,13 @@ export default function StatusPanel({ job }: { job: JobStatus }) {
             })}
           </div>
 
-          {/* Rotating tips */}
           <div className="min-h-[32px]">
             <RotatingTip />
           </div>
         </div>
 
-        {/* Error state */}
         {job.status === "failed" && job.error && (
-          <div className="mx-6 mb-6 p-3 border border-red-500/15 bg-red-500/4 text-red-300/70 text-sm">
+          <div className="mx-6 mb-6 p-3 border border-danger/15 bg-danger/5 rounded-lg text-danger/70 text-sm">
             {job.error}
           </div>
         )}
