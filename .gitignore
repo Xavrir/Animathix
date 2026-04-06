@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environment
+.env
+.env.local
+
+# Manim output
+media/
+dogfood-output/
+frontend/dogfood-output/
+
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Local runtimes
+kokoro-sidecar/.venv/
+
+# IDE
+.vscode/
+.idea/
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db

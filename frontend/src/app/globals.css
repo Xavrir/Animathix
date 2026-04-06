@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-abyss: #050a0e;
+  --color-deep: #0a1018;
+  --color-surface: #0d1520;
+  --color-surface-light: #12202e;
+  --color-cyan: #00f0ff;
+  --color-cyan-dim: #007a82;
+  --color-cyan-glow: #00d4e0;
+  --color-green: #39ff85;
+  --color-green-dim: #1a8a4a;
+  --color-text: #c8dce8;
+  --color-text-dim: #5a7a8e;
+  --color-accent: #1a3a5a;
+
+  --font-heading: var(--font-instrument);
+  --font-body: var(--font-dm-sans);
+}
+
+body {
+  background-color: var(--color-abyss);
+  color: var(--color-text);
+  font-family: var(--font-body), system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Subtle grain texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--color-abyss); }
+::-webkit-scrollbar-thumb { background: var(--color-cyan-dim); border-radius: 3px; }
+
+::selection {
+  background: color-mix(in srgb, var(--color-cyan) 25%, transparent);
+  color: #fff;
+}
+
+/* Heading style */
+.heading-bio {
+  font-family: var(--font-heading), Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+/* Cyan gradient text */
+.text-cyan-gradient {
+  background: linear-gradient(135deg, var(--color-cyan), var(--color-green), var(--color-cyan-glow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass card */
+.glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(13, 21, 32, 0.85),
+    rgba(10, 16, 24, 0.7)
+  );
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 240, 255, 0.08);
+}
+
+/* Glow effects */
+.glow-cyan {
+  box-shadow:
+    0 0 15px rgba(0, 240, 255, 0.12),
+    0 0 40px rgba(0, 240, 255, 0.04);
+}
+
+.glow-green {
+  box-shadow:
+    0 0 15px rgba(57, 255, 133, 0.12),
+    0 0 40px rgba(57, 255, 133, 0.04);
+}
+
+/* Synapse pulse animation */
+@keyframes synapse-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-synapse { animation: synapse-pulse 3s ease-in-out infinite; }
+.animate-float { animation: float-slow 6s ease-in-out infinite; }
+
+/* Input focus glow */
+.input-glow:focus {
+  box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.3), 0 0 20px rgba(0, 240, 255, 0.06);
+  border-color: rgba(0, 240, 255, 0.3);
+}
