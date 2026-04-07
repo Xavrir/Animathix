@@ -6,12 +6,12 @@ import SpiralProgress from "./SpiralProgress";
 import type { JobStatus } from "@/lib/api";
 
 const STEPS = [
-  { key: "planning", label: "Analyzing", description: "Breaking down your question into visual scenes", icon: "🧠" },
-  { key: "synthesizing_audio", label: "Voicing", description: "Preparing narration for each scene", icon: "♪" },
-  { key: "generating_code", label: "Composing", description: "Writing animation code for each scene", icon: "✦" },
-  { key: "rendering", label: "Rendering", description: "Producing your animated video frame by frame", icon: "◈" },
-  { key: "finalizing", label: "Finalizing", description: "Merging audio and video into the final result", icon: "⬢" },
-  { key: "complete", label: "Done", description: "Your video is ready", icon: "✓" },
+  { key: "planning", label: "Analyzing", description: "Breaking down your question into visual scenes", icon: "01" },
+  { key: "synthesizing_audio", label: "Voicing", description: "Preparing narration for each scene", icon: "02" },
+  { key: "generating_code", label: "Composing", description: "Writing animation code for each scene", icon: "03" },
+  { key: "rendering", label: "Rendering", description: "Producing your animated video frame by frame", icon: "04" },
+  { key: "finalizing", label: "Finalizing", description: "Merging audio and video into the final result", icon: "05" },
+  { key: "complete", label: "Done", description: "Your video is ready", icon: "06" },
 ];
 
 const TIPS = [
@@ -131,13 +131,13 @@ export default function StatusPanel({ job }: { job: JobStatus }) {
                   </div>
                   <div className="flex items-center gap-1">
                     <span
-                      className={`text-[10px] ${isDone ? "text-indigo/60" : isCurrent ? "text-indigo-light" : "text-text-muted/30"
+                      className={`text-[10px] font-mono tabular-nums ${isDone ? "text-text-secondary" : isCurrent ? "text-charcoal" : "text-text-muted/40"
                         }`}
                     >
                       {step.icon}
                     </span>
                     <span
-                      className={`text-[10px] tracking-wider uppercase ${isCurrent ? "text-indigo-light" : isDone ? "text-indigo/40" : "text-text-muted/30"
+                      className={`text-[10px] tracking-wider uppercase ${isCurrent ? "text-charcoal" : isDone ? "text-text-secondary" : "text-text-muted/40"
                         }`}
                     >
                       {step.label}

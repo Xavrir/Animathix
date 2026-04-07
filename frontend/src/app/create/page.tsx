@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+
 import InputSection from "@/components/input/InputSection";
 import VoiceSelector from "@/components/voice/VoiceSelector";
 import StatusPanel from "@/components/generation/StatusPanel";
@@ -11,16 +12,17 @@ import ResultSection from "@/components/result/ResultSection";
 import { useJobPolling } from "@/hooks/useJobPolling";
 import { startGeneration, getDownloadUrl } from "@/lib/api";
 import { API_BASE } from "@/lib/constants";
+import { authClient } from "@/lib/auth-client";
 
 export default function CreatePage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   useEffect(() => {
-    const stored = localStorage.getItem("animathix_user");
-    if (!stored) { router.push("/login"); return; }
-    setUser(JSON.parse(stored));
-  }, [router]);
+    if (!isSessionPending && !session) {
+      router.replace("/login");
+    }
+  }, [isSessionPending, router, session]);
 
   const [content, setContent] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -34,7 +36,11 @@ export default function CreatePage() {
 
   const isStarting = isSubmitting || (jobId !== null && isPolling);
   const generationError = submitError || (pollingError instanceof Error ? pollingError.message : null);
-  const canGenerate = (content.trim().length > 0 || file !== null) && !isStarting;
+  const canGenerate =
+    (content.trim().length > 0 || file !== null) &&
+    Boolean(voiceId) &&
+    Boolean(voiceProvider) &&
+    !isStarting;
   const isGenerating = job && job.status !== "complete" && job.status !== "failed";
   const isComplete = job?.status === "complete";
 
@@ -45,9 +51,15 @@ export default function CreatePage() {
     setIsSubmitting(true);
     try {
       const id = await startGeneration({
-        content: content || "Explain the uploaded document",
-        contentType: file ? "pdf" : "text",
-        voiceId, voiceProvider, quality,
+        content: content || "Explain the uploaded file",
+        contentType: file
+          ? file.type.startsWith("image/")
+            ? "image"
+            : "pdf"
+          : "text",
+        voiceId,
+        voiceProvider,
+        quality,
         file: file || undefined,
       });
       setJobId(id);
@@ -58,16 +70,26 @@ export default function CreatePage() {
     }
   }
 
-  if (!user) return null;
+  async function handleSignOut() {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => router.push("/"),
+      },
+    });
+  }
+
+  if (isSessionPending || !session) return null;
 
   return (
     <main className="min-h-screen flex flex-col">
-        <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 md:px-10 border-b border-bronze/10 bg-cream/80 backdrop-blur-md">
+      <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 md:px-10 border-b border-bronze/10 bg-cream/80 backdrop-blur-md">
         <Link href="/" className="heading-editorial text-lg">Animathix</Link>
         <div className="flex items-center gap-5">
-          <span className="text-text-secondary text-sm">{user.name}</span>
+          <span className="text-text-secondary text-sm">
+            {session.user.name || session.user.email}
+          </span>
           <button
-            onClick={() => { localStorage.removeItem("animathix_user"); router.push("/"); }}
+            onClick={handleSignOut}
             className="text-text-muted text-xs hover:text-text-secondary transition-colors cursor-pointer"
           >
             Sign out
@@ -103,15 +125,14 @@ export default function CreatePage() {
           <div className="w-24 h-px bg-border" />
         </div>
 
-        {/* Quality */}
         <div className="flex justify-center gap-2 mb-10">
           {(["low", "medium", "high"] as const).map((q) => (
             <button
               key={q}
               onClick={() => setQuality(q)}
               className={`px-5 py-2.5 text-xs tracking-wider uppercase rounded-lg border transition-colors cursor-pointer ${quality === q
-                  ? "border-olive bg-olive/8 text-olive font-medium"
-                  : "border-border text-text-muted hover:border-charcoal/30 hover:text-text-secondary"
+                ? "border-olive bg-olive/8 text-olive font-medium"
+                : "border-border text-text-muted hover:border-charcoal/30 hover:text-text-secondary"
                 }`}
             >
               {q}
@@ -119,7 +140,6 @@ export default function CreatePage() {
           ))}
         </div>
 
-        {/* Generate */}
         {!isGenerating && !isComplete && (
           <div className="flex justify-center">
             <button onClick={handleGenerate} disabled={!canGenerate} className="btn-primary px-10 py-3.5">

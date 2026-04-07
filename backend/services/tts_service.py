@@ -1,4 +1,6 @@
+import importlib
 import logging
+import os
 import re
 import shutil
 
@@ -9,6 +11,22 @@ logger = logging.getLogger(__name__)
 
 # Check if sox binary is available (required by gTTS/manim-voiceover)
 SOX_AVAILABLE = shutil.which("sox") is not None
+
+
+def _configure_elevenlabs_env() -> None:
+    api_key = os.getenv("ELEVEN_API_KEY") or settings.ELEVENLABS_API_KEY
+    if api_key and not os.getenv("ELEVEN_API_KEY"):
+        os.environ["ELEVEN_API_KEY"] = api_key
+
+
+def _elevenlabs_runtime_ready() -> bool:
+    _configure_elevenlabs_env()
+    try:
+        importlib.import_module("manim_voiceover.services.elevenlabs")
+        return True
+    except Exception as exc:
+        logger.warning("ElevenLabs runtime import failed: %s", exc)
+        return False
 
 
 def get_speech_service_code(voice_id: str, provider: str) -> str:
@@ -24,7 +42,7 @@ def get_speech_service_code(voice_id: str, provider: str) -> str:
     if provider == "elevenlabs":
         return (
             f"from manim_voiceover.services.elevenlabs import ElevenLabsService\n"
-            f'        self.set_speech_service(ElevenLabsService(voice_name="{voice_id}"))'
+            f'        self.set_speech_service(ElevenLabsService(voice_id="{voice_id}"))'
         )
 
     if provider == "openai":
@@ -42,7 +60,9 @@ def get_speech_service_code(voice_id: str, provider: str) -> str:
 async def get_provider_availability() -> dict[str, dict[str, str | bool | None]]:
     kokoro = await get_kokoro_availability()
 
-    elevenlabs_available = SOX_AVAILABLE and bool(settings.ELEVENLABS_API_KEY)
+    elevenlabs_available = SOX_AVAILABLE and bool(
+        os.getenv("ELEVEN_API_KEY") or settings.ELEVENLABS_API_KEY
+    )
     openai_available = SOX_AVAILABLE and bool(settings.OPENAI_API_KEY)
 
     return {
@@ -54,7 +74,7 @@ async def get_provider_availability() -> dict[str, dict[str, str | bool | None]]
             "available": elevenlabs_available,
             "unavailable_reason": None
             if elevenlabs_available
-            else "Requires sox and ELEVENLABS_API_KEY",
+            else "Requires sox and ELEVEN_API_KEY/ELEVENLABS_API_KEY",
         },
         "openai": {
             "available": openai_available,
@@ -76,13 +96,26 @@ def inject_speech_service(
     When sox is unavailable, strip out voiceover entirely and convert to
     a plain Scene so the video renders without audio.
     """
-    if provider == "kokoro":
+    if provider in {"kokoro", "elevenlabs"}:
         code = _strip_voiceover_dependencies(code)
         code = code.replace("(VoiceoverScene)", "(Scene)")
         code = code.replace(
-            "# SPEECH_SERVICE_PLACEHOLDER", "pass  # Kokoro audio merged after render"
+            "# SPEECH_SERVICE_PLACEHOLDER",
+            f"pass  # {provider} audio merged after render",
         )
         code = _strip_voiceover_blocks(code, scene_durations=scene_durations)
+        code = _normalize_text_only_runtime(code)
+        code = _optimize_silent_scene_timing(code)
+        return code
+
+    if not settings.INLINE_VOICEOVER_ENABLED:
+        logger.warning("Inline voiceover disabled - rendering silent video")
+        code = _strip_voiceover_dependencies(code)
+        code = code.replace("(VoiceoverScene)", "(Scene)")
+        code = code.replace(
+            "# SPEECH_SERVICE_PLACEHOLDER", "pass  # Inline voiceover disabled"
+        )
+        code = _strip_voiceover_blocks(code)
         code = _normalize_text_only_runtime(code)
         code = _optimize_silent_scene_timing(code)
         return code
@@ -91,6 +124,18 @@ def inject_speech_service(
         code = _strip_voiceover_dependencies(code)
         code = code.replace("(VoiceoverScene)", "(Scene)")
         code = code.replace("# SPEECH_SERVICE_PLACEHOLDER", "pass  # TTS unavailable")
+        code = _strip_voiceover_blocks(code)
+        code = _normalize_text_only_runtime(code)
+        code = _optimize_silent_scene_timing(code)
+        return code
+
+    if provider == "elevenlabs" and not _elevenlabs_runtime_ready():
+        logger.warning("ElevenLabs SDK not importable - falling back to silent render")
+        code = _strip_voiceover_dependencies(code)
+        code = code.replace("(VoiceoverScene)", "(Scene)")
+        code = code.replace(
+            "# SPEECH_SERVICE_PLACEHOLDER", "pass  # ElevenLabs unavailable"
+        )
         code = _strip_voiceover_blocks(code)
         code = _normalize_text_only_runtime(code)
         code = _optimize_silent_scene_timing(code)

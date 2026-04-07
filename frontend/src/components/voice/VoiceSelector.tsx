@@ -36,6 +36,37 @@ export default function VoiceSelector({
       });
   }, []);
 
+  useEffect(() => {
+    if (voices.length === 0) return;
+
+    const selectedVoice = voices.find(
+      (voice) =>
+        voice.id === selectedVoiceId && voice.provider === selectedProvider
+    );
+
+    if (selectedVoice && selectedVoice.available !== false) {
+      setActiveTab(selectedVoice.provider);
+      return;
+    }
+
+    const firstAvailable = voices.find((voice) => voice.available !== false);
+    if (firstAvailable) {
+      setActiveTab(firstAvailable.provider);
+      if (
+        firstAvailable.id !== selectedVoiceId ||
+        firstAvailable.provider !== selectedProvider
+      ) {
+        onSelect(firstAvailable.id, firstAvailable.provider);
+      }
+      return;
+    }
+
+    const firstProvider = voices[0]?.provider;
+    if (firstProvider) {
+      setActiveTab(firstProvider);
+    }
+  }, [voices, selectedVoiceId, selectedProvider, onSelect]);
+
   const filtered = voices.filter((v) => v.provider === activeTab);
 
   return (

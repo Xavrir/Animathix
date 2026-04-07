@@ -23,7 +23,10 @@ export default function FileUpload({
       e.preventDefault();
       setIsDragging(false);
       const file = e.dataTransfer.files[0];
-      if (file?.type === "application/pdf") {
+      if (
+        file &&
+        (file.type === "application/pdf" || file.type.startsWith("image/"))
+      ) {
         handleFile(file);
       }
     },
@@ -38,7 +41,7 @@ export default function FileUpload({
       onClick={() => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = ".pdf";
+        input.accept = ".pdf,image/png,image/jpeg,image/webp,image/bmp";
         input.onchange = (e) => {
           const file = (e.target as HTMLInputElement).files?.[0];
           if (file) handleFile(file);
@@ -71,7 +74,7 @@ export default function FileUpload({
         </p>
       ) : (
         <p className="text-text-muted text-sm">
-          Drop a PDF here or click to upload
+          Drop a PDF or image here, or click to upload
         </p>
       )}
     </div>

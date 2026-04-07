@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import subprocess
 import wave
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,6 +23,34 @@ def get_wav_duration(file_path: str) -> float:
         if frame_rate <= 0:
             raise ValueError(f"Invalid frame rate in WAV file: {file_path}")
         return wav_file.getnframes() / frame_rate
+
+
+def transcode_audio_to_wav(input_path: str) -> str:
+    output = NamedTemporaryFile(delete=False, suffix=".wav")
+    output_path = output.name
+    output.close()
+
+    result = subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-i",
+            input_path,
+            "-ac",
+            "1",
+            "-ar",
+            "44100",
+            output_path,
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.decode(errors="replace")
+        raise RuntimeError(stderr or "ffmpeg audio transcode failed")
+
+    return output_path
 
 
 def _write_silence_frames(

@@ -3,6 +3,7 @@ FROM python:3.12-slim
 # System deps for Manim (no LaTeX — project uses Text() only)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    tesseract-ocr \
     libcairo2-dev \
     libpango1.0-dev \
     pkg-config \

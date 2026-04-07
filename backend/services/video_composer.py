@@ -17,6 +17,7 @@ from backend.services.audio_utils import (
     merge_audio_with_video,
 )
 from backend.services.code_executor import render_manim_scene
+from backend.services.elevenlabs_client import synthesize_elevenlabs_segments
 from backend.services.kokoro_client import synthesize_kokoro_segments
 from backend.services.tts_service import inject_speech_service
 
@@ -71,10 +72,12 @@ async def _generate_and_render(
     """Generate Manim code and render with self-healing retry loop."""
     error_context = None
     last_result = "Unknown render failure"
+    last_stderr = None
     max_retries = settings.MAX_RETRIES
-    kokoro_task: asyncio.Task | None = None
-    kokoro_segments = None
+    narration_task: asyncio.Task | None = None
+    narration_segments = None
     merged_audio_path: str | None = None
+    scene_durations = None
 
     if voice_provider == "kokoro":
         await update_status(
@@ -82,8 +85,17 @@ async def _generate_and_render(
             0.2,
             "Synthesizing Kokoro narration...",
         )
-        kokoro_task = asyncio.create_task(
+        narration_task = asyncio.create_task(
             synthesize_kokoro_segments(plan.scenes, voice_id)
+        )
+    elif voice_provider == "elevenlabs":
+        await update_status(
+            "synthesizing_audio",
+            0.2,
+            "Synthesizing ElevenLabs narration...",
+        )
+        narration_task = asyncio.create_task(
+            synthesize_elevenlabs_segments(plan.scenes, voice_id)
         )
 
     try:
@@ -110,13 +122,12 @@ async def _generate_and_render(
                 logger.warning("Falling back to template Manim code: %s", exc)
                 code = generate_fallback_manim_code(plan)
 
-            if kokoro_task is not None and kokoro_segments is None:
-                kokoro_segments = await kokoro_task
+            if narration_task is not None and narration_segments is None:
+                narration_segments = await narration_task
 
-            scene_durations = None
-            if kokoro_segments:
+            if narration_segments:
                 scene_durations = [
-                    segment.duration_seconds for segment in kokoro_segments
+                    segment.duration_seconds for segment in narration_segments
                 ]
 
             code = inject_speech_service(
@@ -137,15 +148,19 @@ async def _generate_and_render(
                 quality=quality,
             )
             last_result = result
+            last_stderr = stderr
 
             if success:
-                if kokoro_segments:
+                if narration_segments:
+                    provider_label = (
+                        "Kokoro" if voice_provider == "kokoro" else "ElevenLabs"
+                    )
                     await update_status(
                         "finalizing",
                         0.95,
-                        "Merging Kokoro narration with the video...",
+                        f"Merging {provider_label} narration with the video...",
                     )
-                    merged_audio_path = build_narration_track(kokoro_segments)
+                    merged_audio_path = build_narration_track(narration_segments)
                     return await merge_audio_with_video(result, merged_audio_path)
                 return result
 
@@ -161,16 +176,61 @@ async def _generate_and_render(
                 f"Error:\n{stderr or result}"
             )
 
+        logger.warning(
+            "LLM-generated render failed after %d attempts; trying template fallback render",
+            max_retries,
+        )
+        await update_status(
+            "generating_code",
+            0.85,
+            "Switching to a simpler fallback animation...",
+        )
+        fallback_code = generate_fallback_manim_code(plan)
+        fallback_code = inject_speech_service(
+            fallback_code,
+            voice_id,
+            voice_provider,
+            scene_durations=scene_durations,
+        )
+        await update_status(
+            "rendering",
+            0.9,
+            "Rendering fallback animation...",
+        )
+        success, result, stderr = await render_manim_scene(
+            code=fallback_code,
+            quality=quality,
+        )
+        if success:
+            if narration_segments:
+                provider_label = (
+                    "Kokoro" if voice_provider == "kokoro" else "ElevenLabs"
+                )
+                await update_status(
+                    "finalizing",
+                    0.95,
+                    f"Merging {provider_label} narration with the video...",
+                )
+                merged_audio_path = build_narration_track(narration_segments)
+                return await merge_audio_with_video(result, merged_audio_path)
+            return result
+        last_result = result
+        last_stderr = stderr
+
+        # Include stderr for diagnosis
+        detail = last_stderr or last_result
+        if len(detail) > 500:
+            detail = detail[-500:]
         raise RenderingError(
-            f"Failed after {max_retries} attempts. Last error: {last_result}"
+            f"Failed after {max_retries} attempts. Last error: {detail}"
         )
     finally:
-        if kokoro_task and not kokoro_task.done():
-            kokoro_task.cancel()
+        if narration_task and not narration_task.done():
+            narration_task.cancel()
             with suppress(asyncio.CancelledError):
-                await kokoro_task
-        if kokoro_segments:
-            cleanup_audio_segments(kokoro_segments)
+                await narration_task
+        if narration_segments:
+            cleanup_audio_segments(narration_segments)
         if merged_audio_path:
             from pathlib import Path
 

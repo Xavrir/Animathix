@@ -38,7 +38,7 @@ export default function LandingPage() {
           playsInline
           preload="auto"
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ opacity: 0.45, objectPosition: "60% center" }}
+          style={{ opacity: 0.62, objectPosition: "60% center" }}
         >
           <source src="/hero-philosopher.mp4" type="video/mp4" />
         </video>
@@ -48,14 +48,14 @@ export default function LandingPage() {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to right, #0c0b09 0%, rgba(12,11,9,0.88) 30%, rgba(12,11,9,0.4) 60%, rgba(12,11,9,0.15) 100%)",
+              "linear-gradient(to right, rgba(12,11,9,0.88) 0%, rgba(12,11,9,0.72) 24%, rgba(12,11,9,0.28) 58%, rgba(12,11,9,0.08) 100%)",
           }}
         />
         <div
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to top, #0c0b09 0%, transparent 35%, transparent 80%, rgba(12,11,9,0.6) 100%)",
+              "linear-gradient(to top, rgba(12,11,9,0.78) 0%, transparent 28%, transparent 82%, rgba(12,11,9,0.34) 100%)",
           }}
         />
 
@@ -125,8 +125,8 @@ export default function LandingPage() {
             ].map((s) => (
               <div
                 key={s.label}
-                className="px-5 py-4 rounded-xl border border-border/60 backdrop-blur-sm"
-                style={{ background: "rgba(12, 11, 9, 0.7)" }}
+                className="px-5 py-4 rounded-xl border border-border/60 backdrop-blur-[2px]"
+                style={{ background: "rgba(12, 11, 9, 0.58)" }}
               >
                 <p className="section-label mb-1 text-bronze/60">{s.label}</p>
                 <p className="text-sm text-charcoal">{s.value}</p>

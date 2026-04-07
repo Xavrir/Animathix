@@ -11,10 +11,76 @@ VOICES: dict[str, list[dict]] = {
         {"id": "bm_george", "name": "George (Male, UK)", "lang": "en-gb"},
     ],
     "elevenlabs": [
-        {"id": "Rachel", "name": "Rachel (Female)", "lang": "en"},
-        {"id": "Drew", "name": "Drew (Male)", "lang": "en"},
-        {"id": "Clyde", "name": "Clyde (Male)", "lang": "en"},
-        {"id": "Domi", "name": "Domi (Female)", "lang": "en"},
+        # Educators & narrators
+        {
+            "id": "Xb7hH8MSUJpSbSDYk0k2",
+            "name": "Alice (Female, UK, Educator)",
+            "lang": "en",
+        },
+        {
+            "id": "XrExE9yKIg1WjnnlVkGX",
+            "name": "Matilda (Female, US, Professional)",
+            "lang": "en",
+        },
+        {
+            "id": "onwK4e9ZLuTAKqWW03F9",
+            "name": "Daniel (Male, UK, Broadcaster)",
+            "lang": "en",
+        },
+        {
+            "id": "hpp4J3VqNfWAUOO0d1Us",
+            "name": "Bella (Female, US, Educator)",
+            "lang": "en",
+        },
+        {
+            "id": "pFZP5JQG7iQjIQuC4Bku",
+            "name": "Lily (Female, UK, Narrator)",
+            "lang": "en",
+        },
+        {
+            "id": "JBFqnCBsd6RMkjVDRZzb",
+            "name": "George (Male, UK, Storyteller)",
+            "lang": "en",
+        },
+        # Conversational
+        {
+            "id": "EXAVITQu4vr4xnSDxMaL",
+            "name": "Sarah (Female, US, Confident)",
+            "lang": "en",
+        },
+        {"id": "cjVigY5qzO86Huf0OWal", "name": "Eric (Male, US, Smooth)", "lang": "en"},
+        {"id": "nPczCjzI2devNBz1zQrb", "name": "Brian (Male, US, Deep)", "lang": "en"},
+        {"id": "pqHfZKP75CvOlQylNhV4", "name": "Bill (Male, US, Wise)", "lang": "en"},
+        {
+            "id": "CwhRBWXzGAHq8TQ4Fs17",
+            "name": "Roger (Male, US, Casual)",
+            "lang": "en",
+        },
+        {
+            "id": "IKne3meq5aSn9XLyUdCD",
+            "name": "Charlie (Male, AU, Confident)",
+            "lang": "en",
+        },
+        {
+            "id": "SAz9YHcvj6GT2YYXdXww",
+            "name": "River (Neutral, US, Informative)",
+            "lang": "en",
+        },
+        {
+            "id": "cgSgspJ2msm6clMCkdW9",
+            "name": "Jessica (Female, US, Playful)",
+            "lang": "en",
+        },
+        {
+            "id": "iP95p4xoKVk53GoZ742B",
+            "name": "Chris (Male, US, Charming)",
+            "lang": "en",
+        },
+        {
+            "id": "TX3LPaxmHKxFdv7VOQHJ",
+            "name": "Liam (Male, US, Energetic)",
+            "lang": "en",
+        },
     ],
     "openai": [
         {"id": "alloy", "name": "Alloy (Neutral)", "lang": "en"},

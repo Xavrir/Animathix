@@ -14,11 +14,12 @@ from backend.services.video_composer import generate_video
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["generate"])
 
-ContentType = Literal["text", "latex", "pdf"]
+ContentType = Literal["text", "latex", "pdf", "image"]
 VoiceProvider = Literal["kokoro", "elevenlabs", "openai"]
 RenderQuality = Literal["low", "medium", "high"]
 
 MAX_PDF_SIZE_BYTES = 50 * 1024 * 1024
+MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024
 
 
 def _build_generation_request(
@@ -46,11 +47,14 @@ async def _parse_generation_content(
     if file and content_type == "pdf":
         return await _parse_uploaded_pdf(content=content, file=file)
 
+    if file and content_type == "image":
+        return await _parse_uploaded_image(content=content, file=file)
+
     return await parse_input(content, content_type)
 
 
 async def _parse_uploaded_pdf(*, content: str, file: UploadFile) -> str:
-    temp_path = _write_uploaded_pdf(file)
+    temp_path = _write_uploaded_file(file, allowed_kind="pdf")
 
     try:
         return await parse_input(content, "pdf", file_path=str(temp_path))
@@ -58,19 +62,48 @@ async def _parse_uploaded_pdf(*, content: str, file: UploadFile) -> str:
         temp_path.unlink(missing_ok=True)
 
 
-def _write_uploaded_pdf(file: UploadFile) -> Path:
-    total_bytes = 0
+async def _parse_uploaded_image(*, content: str, file: UploadFile) -> str:
+    temp_path = _write_uploaded_file(file, allowed_kind="image")
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+    try:
+        return await parse_input(content, "image", file_path=str(temp_path))
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+
+def _write_uploaded_file(
+    file: UploadFile, *, allowed_kind: Literal["pdf", "image"]
+) -> Path:
+    total_bytes = 0
+    suffix = Path(file.filename or "upload").suffix.lower()
+    max_bytes = MAX_PDF_SIZE_BYTES if allowed_kind == "pdf" else MAX_IMAGE_SIZE_BYTES
+
+    if allowed_kind == "pdf":
+        if suffix != ".pdf":
+            raise HTTPException(status_code=400, detail="Only PDF files are allowed.")
+    else:
+        if suffix not in {".png", ".jpg", ".jpeg", ".webp", ".bmp"}:
+            raise HTTPException(
+                status_code=400,
+                detail="Supported image formats: PNG, JPG, JPEG, WEBP, BMP.",
+            )
+
+    with tempfile.NamedTemporaryFile(
+        delete=False, suffix=suffix or ".bin"
+    ) as temp_file:
         temp_path = Path(temp_file.name)
 
         try:
             while chunk := file.file.read(1024 * 1024):
                 total_bytes += len(chunk)
-                if total_bytes > MAX_PDF_SIZE_BYTES:
+                if total_bytes > max_bytes:
                     raise HTTPException(
                         status_code=413,
-                        detail="PDF uploads must be 50 MB or smaller.",
+                        detail=(
+                            "PDF uploads must be 50 MB or smaller."
+                            if allowed_kind == "pdf"
+                            else "Image uploads must be 20 MB or smaller."
+                        ),
                     )
                 temp_file.write(chunk)
         except Exception:
@@ -95,13 +128,16 @@ async def _run_generation(job_id: str, request: GenerateRequest) -> None:
             message="Video ready!",
             video_path=video_path,
         )
-    except Exception:
+    except Exception as exc:
         logger.exception("Generation failed for job %s", job_id)
+        error_detail = str(exc)
+        if len(error_detail) > 300:
+            error_detail = error_detail[:300] + "..."
         update_job(
             job_id,
             status="failed",
             message="Generation failed",
-            error="Unable to generate the video. Check backend logs for details.",
+            error=error_detail or "Unable to generate the video.",
         )
 
 

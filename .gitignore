@@ -35,6 +35,13 @@ kokoro-sidecar/.venv/
 # Vercel
 frontend/.vercel/
 
+# Playwright artifacts
+.playwright-cli/
+frontend/.playwright-cli/
+frontend/*.yaml
+frontend/*.yml
+frontend/*.db
+
 # OS
 .DS_Store
 Thumbs.db

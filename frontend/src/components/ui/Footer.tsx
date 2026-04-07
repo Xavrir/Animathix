@@ -57,7 +57,7 @@ export default function Footer() {
                 </div>
 
                 <div className="mt-10 pt-6 border-t border-border flex items-center justify-between">
-                    <p className="text-text-muted text-xs">© {new Date().getFullYear()} Animathix</p>
+                    <p className="text-text-muted text-xs">(c) {new Date().getFullYear()} Animathix</p>
                 </div>
             </div>
         </footer>

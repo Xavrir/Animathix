@@ -86,6 +86,7 @@ async def _request_completion(
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                timeout=settings.OPENROUTER_TIMEOUT,
             )
         except RETRYABLE_OPENROUTER_ERRORS as exc:
             last_error = exc
@@ -151,6 +152,56 @@ def _identify_known_topic(text: str) -> str | None:
         return "gauss"
 
     return None
+
+
+def _infer_visual_mode(text: str) -> str:
+    lowered = text.lower()
+
+    if any(
+        keyword in lowered
+        for keyword in [
+            "graph",
+            "function",
+            "curve",
+            "slope",
+            "rate",
+            "change",
+            "equation",
+            "axis",
+        ]
+    ):
+        return "graph"
+
+    if any(
+        keyword in lowered
+        for keyword in [
+            "triangle",
+            "circle",
+            "angle",
+            "shape",
+            "area",
+            "length",
+            "geometry",
+            "distance",
+        ]
+    ):
+        return "geometry"
+
+    if any(
+        keyword in lowered
+        for keyword in [
+            "count",
+            "probability",
+            "combin",
+            "case",
+            "arrange",
+            "discrete",
+            "odds",
+        ]
+    ):
+        return "discrete"
+
+    return "comparison"
 
 
 def _build_known_fallback_plan(content: str) -> NarrationPlan | None:
@@ -335,52 +386,95 @@ def generate_fallback_plan(content: str) -> NarrationPlan:
 
     short_topic = cleaned[:80].rstrip(" ,.;:")
     title = short_topic[:60] if len(short_topic) > 60 else short_topic
+    mode = _infer_visual_mode(cleaned)
+
+    if mode == "graph":
+        simplest_visual = "Show one simple curve on Axes and mark a single point or interval that the viewer should focus on first."
+        shift_visual = "Reframe the same graph from a new viewpoint: compare local vs global behavior, or transform a moving secant/marker into the key insight."
+        mistake_visual = "Show the tempting but wrong graph reading, then contrast it with the correct interpretation using color and annotation."
+        hints = ["Use Axes", "Use Dot", "Use Line", "Use Transform"]
+    elif mode == "geometry":
+        simplest_visual = "Start with one concrete geometric figure and label only the one or two lengths, angles, or areas that matter."
+        shift_visual = "Rearrange, rotate, or decompose the same figure so the hidden relationship becomes obvious from the new view."
+        mistake_visual = "Show a plausible but wrong geometric intuition, then correct it by highlighting the exact part of the diagram that was overlooked."
+        hints = ["Use Polygon", "Use Line", "Use Angle", "Use VGroup"]
+    elif mode == "discrete":
+        simplest_visual = "Show a very small concrete case first — just a few objects, slots, or outcomes that can be tracked individually."
+        shift_visual = "Group or reorganize the same cases so a pattern becomes visible instead of being counted one-by-one."
+        mistake_visual = "Show the naive counting or comparison method, then contrast it with the correct grouping or case split."
+        hints = ["Use VGroup", "Use SurroundingRectangle", "Use Arrow", "Use Transform"]
+    else:
+        simplest_visual = "Show two concrete states side by side with one quantity or relationship highlighted so the question is visually clear."
+        shift_visual = "Reinterpret the same objects in a different arrangement so the important relationship becomes easier to see."
+        mistake_visual = "Contrast the first intuitive reading with the corrected one using side-by-side visuals and a highlighted difference."
+        hints = ["Use RoundedRectangle", "Use Arrow", "Use VGroup", "Use Indicate"]
 
     return NarrationPlan(
         title=title or "Math concept overview",
         concept_summary=(
-            f"This video explains {short_topic} with a visual walkthrough, simple language, "
-            "and a short recap at the end."
+            f"This video explains {short_topic} by starting with a concrete visual example, "
+            "building intuition, and only then stating the key idea clearly."
         ),
-        prerequisite_concepts=["Basic algebra", "Reading equations"],
+        prerequisite_concepts=[
+            "Basic algebra",
+            "Interpreting diagrams",
+            "Following a simple example",
+        ],
         scenes=[
             ScenePlan(
                 scene_number=1,
                 narration_text=(
-                    f"Let us start with the big idea behind {short_topic}. "
-                    "We will identify what the question is asking and what the important pieces mean."
+                    f"Let us start with the real question behind {short_topic}. "
+                    "Before naming any rule, we will look at one visual situation and ask what is actually changing or relating."
                 ),
                 visual_description=(
-                    "Show the main topic as a title card, then introduce the core expression or concept "
-                    "with clear labels."
+                    "Open with a visible puzzle or focused question, not a title card. Use one concrete visual and make the unknown visually obvious."
                 ),
-                manim_hints=["Use Text", "Use labels", "Animate with FadeIn"],
+                manim_hints=[*hints, "Use Text", "Open with a visible question"],
             ),
             ScenePlan(
                 scene_number=2,
                 narration_text=(
-                    "Now we work through the idea step by step. "
-                    "We connect each change in the math to a matching visual so the reasoning stays easy to follow."
+                    "Now reduce the idea to the simplest non-trivial case. "
+                    "If we can understand one small example clearly, the larger pattern becomes much easier to trust."
                 ),
-                visual_description=(
-                    "Break the explanation into two or three visual steps with arrows, highlights, and simple equations."
-                ),
-                manim_hints=[
-                    "Use VGroup",
-                    "Highlight key terms",
-                    "Animate with Transform",
-                ],
+                visual_description=simplest_visual,
+                manim_hints=[*hints, "Keep only the essential objects onscreen"],
             ),
             ScenePlan(
                 scene_number=3,
                 narration_text=(
-                    f"To finish, we summarize what {short_topic} tells us and why it matters. "
-                    "End with one clear takeaway the viewer can remember."
+                    "Here is the perspective shift. We will look at the same idea in a new way so the relationship stops feeling arbitrary and starts feeling inevitable."
+                ),
+                visual_description=shift_visual,
+                manim_hints=[*hints, "Use Transform or re-layout for the aha moment"],
+            ),
+            ScenePlan(
+                scene_number=4,
+                narration_text=(
+                    "A common first intuition here is slightly off. Show the tempting wrong interpretation, then make it clear why the correct one works better."
+                ),
+                visual_description=mistake_visual,
+                manim_hints=[
+                    *hints,
+                    "Use contrast",
+                    "Use color to compare wrong vs right",
+                ],
+            ),
+            ScenePlan(
+                scene_number=5,
+                narration_text=(
+                    f"To finish, restate what {short_topic} really means in plain language. "
+                    "End with one visual that makes the final takeaway easy to remember."
                 ),
                 visual_description=(
-                    "Show a final summary card with the main result, then fade to a concise takeaway sentence."
+                    "Show one clean final state that summarizes the key relationship, then add a short plain-language takeaway."
                 ),
-                manim_hints=["Use Text", "Use Write", "Animate with FadeOut"],
+                manim_hints=[
+                    "Use one strong final visual",
+                    "Use concise takeaway text",
+                    "Avoid a text-only ending",
+                ],
             ),
         ],
     )
@@ -658,6 +752,14 @@ def generate_fallback_manim_code(plan: NarrationPlan) -> str:
 
     title = _escape(plan.title or "Math Concept")[:50]
     summary = _escape(plan.concept_summary or "")[:90]
+    topic_text = " ".join(
+        [
+            plan.title,
+            plan.concept_summary,
+            *[scene.narration_text for scene in plan.scenes],
+        ]
+    )
+    mode = _infer_visual_mode(topic_text)
     scenes = plan.scenes[:5]
     scene_count = len(scenes)
 
@@ -667,169 +769,161 @@ def generate_fallback_manim_code(plan: NarrationPlan) -> str:
         vis_desc = _escape(scene.visual_description or "")[:60]
 
         if i == 0:
-            # Scene 1: Title card + concept introduction
+            # Scene 1: Visible question / hook
             scene_blocks.append(f'''
-        # ── Scene {i + 1}: Introduction ──
+        # ── Scene {i + 1}: Visible Question ──
         with self.voiceover(text="{narr_full}") as tracker:
-            # Title
-            heading = Text("{title}", font_size=40, color=BLUE_B)
-            heading.to_edge(UP, buff=1.0)
-            underline = Line(
-                heading.get_left() + DOWN * 0.4,
-                heading.get_right() + DOWN * 0.4,
-                color=BLUE_D, stroke_width=2,
-            )
+            heading = Text("{title}", font_size=28, color=BLUE_B, weight=BOLD).to_edge(UP, buff=0.6)
+            question = Text("What should we notice here?", font_size=26, color=YELLOW)
+            question.shift(UP * 1.2)
 
-            # Concept summary in center
-            desc = Text("{summary}", font_size=22, color=GREY_A,
-                        weight=LIGHT)
-            desc.next_to(heading, DOWN, buff=1.2)
-            if desc.width > config.frame_width - 2:
-                desc.set(width=config.frame_width - 2)
-            self.play(Write(heading), run_time=tracker.duration * 0.3)
-            self.play(Create(underline), run_time=tracker.duration * 0.15)
-            self.play(FadeIn(desc), run_time=tracker.duration * 0.25)
-            self.wait(tracker.duration * 0.2)
+            left_box = RoundedRectangle(width=3.2, height=2.1, corner_radius=0.15, color=BLUE_B, fill_opacity=0.08).shift(LEFT * 2.4 + DOWN * 0.2)
+            right_box = RoundedRectangle(width=3.2, height=2.1, corner_radius=0.15, color=GREEN_B, fill_opacity=0.08).shift(RIGHT * 2.4 + DOWN * 0.2)
+            left_label = Text("same idea", font_size=18, color=BLUE_B).move_to(left_box.get_center() + UP * 0.45)
+            right_label = Text("new angle", font_size=18, color=GREEN_B).move_to(right_box.get_center() + UP * 0.45)
+            center_arrow = Arrow(left_box.get_right(), right_box.get_left(), buff=0.25, color=YELLOW)
+
+            hook = Text("{_make_subtitle(scene.narration_text, 62)}", font_size=18, color=GREY_A)
+            if hook.width > config.frame_width - 1.6:
+                hook.set(width=config.frame_width - 1.6)
+            hook.to_edge(DOWN, buff=0.9)
+
+            self.play(Write(heading), run_time=tracker.duration * 0.14)
+            self.play(Write(question), run_time=tracker.duration * 0.14)
+            self.play(Create(left_box), Create(right_box), GrowArrow(center_arrow), run_time=tracker.duration * 0.24)
+            self.play(FadeIn(left_label), FadeIn(right_label), FadeIn(hook), run_time=tracker.duration * 0.18)
+            self.wait(tracker.duration * 0.14)
 
         self.play(FadeOut(*self.mobjects))''')
 
-        elif i == scene_count - 1:
-            # Last scene: Key takeaway / summary
+        elif i == 1 and mode == "graph":
             scene_blocks.append(f'''
-        # ── Scene {i + 1}: Key Takeaway ──
+        # ── Scene {i + 1}: Simplest Graph Case ──
         with self.voiceover(text="{narr_full}") as tracker:
-            # Summary box
-            takeaway_label = Text("Key Takeaway", font_size=20, color=YELLOW,
-                                  weight=BOLD).to_edge(UP, buff=0.8)
-            result_box = RoundedRectangle(
-                corner_radius=0.15, width=9, height=2.2,
-                color=YELLOW, fill_opacity=0.06, stroke_width=1.5,
-            )
+            heading = Text("small concrete case", font_size=22, color=BLUE_C, weight=BOLD).to_edge(UP, buff=0.5)
+            axes = Axes(x_range=[-3, 3, 1], y_range=[-1, 5, 1], x_length=5.7, y_length=3.8, axis_config={{"include_numbers": False}}).shift(DOWN * 0.2)
+            graph = axes.plot(lambda x: 0.4 * x**2 + 0.5, x_range=[-2.4, 2.4], color=YELLOW)
+            focus_x = 1.0
+            focus_dot = Dot(axes.c2p(focus_x, 0.4 * focus_x**2 + 0.5), color=YELLOW)
+            helper = DashedLine(axes.c2p(focus_x, 0), focus_dot.get_center(), color=GREY_B)
+            note = Text("{_make_subtitle(scene.narration_text, 48)}", font_size=16, color=GREY_B)
+            if note.width > 3.5:
+                note.set(width=3.5)
+            note.to_edge(RIGHT, buff=0.4).shift(DOWN * 0.3)
 
-            # Show the narration as the takeaway content
-            takeaway_text = Text("{_make_subtitle(scene.narration_text, 80)}",
-                                 font_size=22, color=WHITE)
-            if takeaway_text.width > 8:
-                takeaway_text.set(width=8)
-            takeaway_text.move_to(result_box.get_center())
+            self.play(Write(heading), run_time=tracker.duration * 0.12)
+            self.play(Create(axes), Create(graph), run_time=tracker.duration * 0.28)
+            self.play(FadeIn(focus_dot), Create(helper), run_time=tracker.duration * 0.16)
+            self.play(FadeIn(note), run_time=tracker.duration * 0.16)
+            self.wait(tracker.duration * 0.14)
 
-            check_mark = Text(">>", font_size=26, color=GREEN)
-            check_mark.next_to(result_box, LEFT, buff=0.3)
-            self.play(Write(takeaway_label), run_time=tracker.duration * 0.15)
-            self.play(Create(result_box), run_time=tracker.duration * 0.2)
-            self.play(Write(takeaway_text), run_time=tracker.duration * 0.3)
-            self.play(FadeIn(check_mark), run_time=tracker.duration * 0.1)
-            self.wait(tracker.duration * 0.15)
+        self.play(FadeOut(*self.mobjects))''')
+
+        elif i == 1 and mode == "geometry":
+            scene_blocks.append(f'''
+        # ── Scene {i + 1}: Simplest Geometric Case ──
+        with self.voiceover(text="{narr_full}") as tracker:
+            heading = Text("small concrete case", font_size=22, color=BLUE_C, weight=BOLD).to_edge(UP, buff=0.5)
+            triangle = Polygon(LEFT * 2 + DOWN, RIGHT * 0.4 + DOWN, RIGHT * 0.4 + UP * 1.4, color=BLUE_B)
+            base_label = Text("known piece", font_size=18, color=BLUE_B).next_to(triangle, DOWN, buff=0.25)
+            side = Line(RIGHT * 0.4 + DOWN, RIGHT * 0.4 + UP * 1.4, color=YELLOW)
+            side_label = Text("changing part", font_size=18, color=YELLOW).next_to(side, RIGHT, buff=0.2)
+            note = Text("{_make_subtitle(scene.narration_text, 48)}", font_size=16, color=GREY_B)
+            if note.width > 3.5:
+                note.set(width=3.5)
+            note.to_edge(RIGHT, buff=0.4).shift(DOWN * 0.2)
+
+            self.play(Write(heading), run_time=tracker.duration * 0.12)
+            self.play(Create(triangle), run_time=tracker.duration * 0.22)
+            self.play(Write(base_label), Create(side), Write(side_label), run_time=tracker.duration * 0.22)
+            self.play(FadeIn(note), run_time=tracker.duration * 0.16)
+            self.wait(tracker.duration * 0.14)
 
         self.play(FadeOut(*self.mobjects))''')
 
         elif i == 1:
-            # Scene 2: Axes + graph with explanation labels
             scene_blocks.append(f'''
-        # ── Scene {i + 1}: Visual Explanation ──
+        # ── Scene {i + 1}: Small Concrete Case ──
         with self.voiceover(text="{narr_full}") as tracker:
-            # Section heading
-            heading = Text("{vis_desc[:45]}", font_size=22, color=BLUE_C,
-                           weight=BOLD).to_edge(UP, buff=0.5)
+            heading = Text("small concrete case", font_size=22, color=BLUE_C, weight=BOLD).to_edge(UP, buff=0.5)
+            left = RoundedRectangle(width=2.2, height=1.4, corner_radius=0.12, color=BLUE_B, fill_opacity=0.08).shift(LEFT * 2.0)
+            middle = RoundedRectangle(width=2.2, height=1.4, corner_radius=0.12, color=GREEN_B, fill_opacity=0.08)
+            right = RoundedRectangle(width=2.2, height=1.4, corner_radius=0.12, color=YELLOW, fill_opacity=0.08).shift(RIGHT * 2.0)
+            a1 = Arrow(left.get_right(), middle.get_left(), buff=0.18, color=GREY_B)
+            a2 = Arrow(middle.get_right(), right.get_left(), buff=0.18, color=GREY_B)
+            note = Text("{_make_subtitle(scene.narration_text, 54)}", font_size=18, color=GREY_B)
+            if note.width > config.frame_width - 2:
+                note.set(width=config.frame_width - 2)
+            note.to_edge(DOWN, buff=0.9)
 
-            # Axes and graph
-            axes = Axes(
-                x_range=[-3, 3, 1], y_range=[-1, 5, 1],
-                x_length=5.5, y_length=3.5,
-                axis_config={{"include_numbers": False}},
-            ).shift(DOWN * 0.2 + LEFT * 0.5)
-            x_lab = Text("x", font_size=20).next_to(axes.x_axis, RIGHT, buff=0.15)
-            y_lab = Text("y", font_size=20).next_to(axes.y_axis, UP, buff=0.15)
-            graph = axes.plot(lambda x: x ** 2, x_range=[-2.1, 2.1], color=YELLOW)
-            g_label = Text("f(x) = x^2", font_size=18, color=YELLOW)
-            g_label.next_to(graph, UR, buff=0.15)
-
-            # Explanation text on the right
-            explain = Text("{_make_subtitle(scene.narration_text, 40)}",
-                           font_size=16, color=GREY_B, weight=LIGHT)
-            if explain.width > 3.5:
-                explain.set(width=3.5)
-            explain.to_edge(RIGHT, buff=0.4).shift(DOWN * 0.5)
-            self.play(Write(heading), run_time=tracker.duration * 0.1)
-            self.play(Create(axes), Write(x_lab), Write(y_lab), run_time=tracker.duration * 0.2)
-            self.play(Create(graph), Write(g_label), run_time=tracker.duration * 0.25)
-            self.play(FadeIn(explain), run_time=tracker.duration * 0.15)
-            self.wait(tracker.duration * 0.2)
+            self.play(Write(heading), run_time=tracker.duration * 0.12)
+            self.play(Create(left), Create(middle), Create(right), run_time=tracker.duration * 0.24)
+            self.play(GrowArrow(a1), GrowArrow(a2), run_time=tracker.duration * 0.14)
+            self.play(FadeIn(note), run_time=tracker.duration * 0.18)
+            self.wait(tracker.duration * 0.14)
 
         self.play(FadeOut(*self.mobjects))''')
 
         elif i == 2:
-            # Scene 3: Geometric construction with labels
             scene_blocks.append(f'''
-        # ── Scene {i + 1}: Geometric Visualization ──
+        # ── Scene {i + 1}: Perspective Shift ──
         with self.voiceover(text="{narr_full}") as tracker:
-            heading = Text("{vis_desc[:45]}", font_size=22, color=BLUE_C,
-                           weight=BOLD).to_edge(UP, buff=0.5)
+            heading = Text("new point of view", font_size=22, color=BLUE_C, weight=BOLD).to_edge(UP, buff=0.5)
+            left_frame = RoundedRectangle(width=3.0, height=2.2, corner_radius=0.12, color=BLUE_B, fill_opacity=0.05).shift(LEFT * 2.4)
+            right_frame = RoundedRectangle(width=3.0, height=2.2, corner_radius=0.12, color=YELLOW, fill_opacity=0.07).shift(RIGHT * 2.4)
+            before = Text("before", font_size=18, color=BLUE_B).move_to(left_frame.get_center() + UP * 0.7)
+            after = Text("after", font_size=18, color=YELLOW).move_to(right_frame.get_center() + UP * 0.7)
+            bridge = Arrow(left_frame.get_right(), right_frame.get_left(), buff=0.25, color=YELLOW)
+            note = Text("{_make_subtitle(scene.narration_text, 52)}", font_size=18, color=GREY_A)
+            if note.width > config.frame_width - 1.8:
+                note.set(width=config.frame_width - 1.8)
+            note.to_edge(DOWN, buff=0.8)
 
-            # Geometric objects
-            circle = Circle(radius=1.4, color=BLUE).shift(LEFT * 1)
-            dot = Dot(circle.point_at_angle(PI / 4), color=YELLOW)
-            radius_line = Line(circle.get_center(), dot.get_center(), color=RED)
-            r_label = Text("r", font_size=24, color=RED).next_to(radius_line, UL, buff=0.1)
-            angle_arc = Arc(radius=0.4, start_angle=0, angle=PI / 4,
-                            color=GREEN).shift(LEFT * 1)
-            angle_label = Text("angle", font_size=18, color=GREEN)
-            angle_label.next_to(angle_arc, RIGHT, buff=0.1)
-
-            # Explanation panel on the right
-            explain = Text("{_make_subtitle(scene.narration_text, 40)}",
-                           font_size=16, color=GREY_B, weight=LIGHT)
-            if explain.width > 3.5:
-                explain.set(width=3.5)
-            explain.to_edge(RIGHT, buff=0.4).shift(DOWN * 0.3)
             self.play(Write(heading), run_time=tracker.duration * 0.1)
-            self.play(Create(circle), run_time=tracker.duration * 0.15)
-            self.play(Create(radius_line), FadeIn(dot), Write(r_label),
-                      run_time=tracker.duration * 0.2)
-            self.play(Create(angle_arc), Write(angle_label),
-                      run_time=tracker.duration * 0.15)
-            self.play(FadeIn(explain), run_time=tracker.duration * 0.1)
-            self.wait(tracker.duration * 0.2)
+            self.play(Create(left_frame), Create(right_frame), run_time=tracker.duration * 0.2)
+            self.play(FadeIn(before), FadeIn(after), GrowArrow(bridge), run_time=tracker.duration * 0.18)
+            self.play(FadeIn(note), run_time=tracker.duration * 0.18)
+            self.wait(tracker.duration * 0.14)
+
+        self.play(FadeOut(*self.mobjects))''')
+
+        elif i == scene_count - 2:
+            scene_blocks.append(f'''
+        # ── Scene {i + 1}: Common Mistake ──
+        with self.voiceover(text="{narr_full}") as tracker:
+            heading = Text("tempting but wrong", font_size=22, color=RED_C, weight=BOLD).to_edge(UP, buff=0.5)
+            wrong_box = RoundedRectangle(width=3.2, height=2.0, corner_radius=0.12, color=RED_C, fill_opacity=0.06).shift(LEFT * 2.1)
+            right_box = RoundedRectangle(width=3.2, height=2.0, corner_radius=0.12, color=GREEN_B, fill_opacity=0.06).shift(RIGHT * 2.1)
+            wrong_label = Text("first guess", font_size=18, color=RED_C).move_to(wrong_box.get_center() + UP * 0.55)
+            right_label = Text("better view", font_size=18, color=GREEN_B).move_to(right_box.get_center() + UP * 0.55)
+            divider = Line(UP * 1.1, DOWN * 1.4, color=GREY_B)
+            note = Text("{_make_subtitle(scene.narration_text, 56)}", font_size=17, color=GREY_A)
+            if note.width > config.frame_width - 1.8:
+                note.set(width=config.frame_width - 1.8)
+            note.to_edge(DOWN, buff=0.8)
+
+            self.play(Write(heading), run_time=tracker.duration * 0.1)
+            self.play(Create(wrong_box), Create(right_box), Create(divider), run_time=tracker.duration * 0.22)
+            self.play(FadeIn(wrong_label), FadeIn(right_label), run_time=tracker.duration * 0.16)
+            self.play(FadeIn(note), run_time=tracker.duration * 0.18)
+            self.wait(tracker.duration * 0.14)
 
         self.play(FadeOut(*self.mobjects))''')
 
         else:
-            # Generic middle scene: step-by-step with explanation
-            step_text = _make_subtitle(scene.narration_text, 55)
             scene_blocks.append(f'''
-        # ── Scene {i + 1}: Step-by-Step ──
+        # ── Scene {i + 1}: Takeaway ──
         with self.voiceover(text="{narr_full}") as tracker:
-            heading = Text("{vis_desc[:45]}", font_size=22, color=BLUE_C,
-                           weight=BOLD).to_edge(UP, buff=0.5)
-
-            # Step boxes
-            s1_box = RoundedRectangle(width=4, height=0.8, corner_radius=0.1,
-                                      color=BLUE, fill_opacity=0.1).shift(UP * 1)
-            s1_text = Text("Step 1: Identify", font_size=20, color=BLUE)
-            s1_text.move_to(s1_box)
-            arrow1 = Arrow(s1_box.get_bottom(), DOWN * 0.2, color=GREY_B,
-                           stroke_width=2, max_tip_length_to_length_ratio=0.15)
-
-            s2_box = RoundedRectangle(width=4, height=0.8, corner_radius=0.1,
-                                      color=GREEN, fill_opacity=0.1).shift(DOWN * 0.7)
-            s2_text = Text("Step 2: Apply", font_size=20, color=GREEN)
-            s2_text.move_to(s2_box)
-            arrow2 = Arrow(s2_box.get_bottom(), DOWN * 1.9, color=GREY_B,
-                           stroke_width=2, max_tip_length_to_length_ratio=0.15)
-
-            s3_box = RoundedRectangle(width=4, height=0.8, corner_radius=0.1,
-                                      color=YELLOW, fill_opacity=0.1).shift(DOWN * 2.4)
-            s3_text = Text("Step 3: Result", font_size=20, color=YELLOW)
-            s3_text.move_to(s3_box)
-            result_glow = SurroundingRectangle(s3_box, color=YELLOW, buff=0.1)
-            self.play(Write(heading), run_time=tracker.duration * 0.1)
-            self.play(Create(s1_box), Write(s1_text), run_time=tracker.duration * 0.15)
-            self.play(GrowArrow(arrow1), run_time=tracker.duration * 0.1)
-            self.play(Create(s2_box), Write(s2_text), run_time=tracker.duration * 0.15)
-            self.play(GrowArrow(arrow2), run_time=tracker.duration * 0.1)
-            self.play(Create(s3_box), Write(s3_text), run_time=tracker.duration * 0.1)
-            self.play(Create(result_glow), run_time=tracker.duration * 0.1)
-            self.wait(tracker.duration * 0.1)
+            takeaway_label = Text("key insight", font_size=20, color=YELLOW, weight=BOLD).to_edge(UP, buff=0.8)
+            result_box = RoundedRectangle(corner_radius=0.15, width=9, height=2.5, color=YELLOW, fill_opacity=0.06, stroke_width=1.5)
+            takeaway_text = Text("{_make_subtitle(scene.narration_text, 88)}", font_size=22, color=WHITE)
+            if takeaway_text.width > 8:
+                takeaway_text.set(width=8)
+            takeaway_text.move_to(result_box.get_center())
+            self.play(Write(takeaway_label), run_time=tracker.duration * 0.14)
+            self.play(Create(result_box), run_time=tracker.duration * 0.18)
+            self.play(Write(takeaway_text), run_time=tracker.duration * 0.28)
+            self.wait(tracker.duration * 0.16)
 
         self.play(FadeOut(*self.mobjects))''')
 
