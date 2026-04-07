@@ -6,8 +6,6 @@ from typing import Callable
 from backend.config import settings
 from backend.models.schemas import GenerateRequest, NarrationPlan
 from backend.services.ai_pipeline import (
-    generate_fallback_manim_code,
-    generate_fallback_plan,
     generate_manim_code,
     generate_plan,
 )
@@ -41,11 +39,7 @@ async def generate_video(
     """
     # Step 1: Generate narration plan
     await update_status("planning", 0.1, "Analyzing your math question...")
-    try:
-        plan = await generate_plan(request.content)
-    except Exception as exc:
-        logger.warning("Falling back to template narration plan: %s", exc)
-        plan = generate_fallback_plan(request.content)
+    plan = await generate_plan(request.content)
 
     logger.info("Plan generated: %s (%d scenes)", plan.title, len(plan.scenes))
 
@@ -116,11 +110,7 @@ async def _generate_and_render(
                     "Generating animation code...",
                 )
 
-            try:
-                code = await generate_manim_code(plan, error_context=error_context)
-            except Exception as exc:
-                logger.warning("Falling back to template Manim code: %s", exc)
-                code = generate_fallback_manim_code(plan)
+            code = await generate_manim_code(plan, error_context=error_context)
 
             if narration_task is not None and narration_segments is None:
                 narration_segments = await narration_task
@@ -175,47 +165,6 @@ async def _generate_and_render(
                 f"Code:\n{code}\n\n"
                 f"Error:\n{stderr or result}"
             )
-
-        logger.warning(
-            "LLM-generated render failed after %d attempts; trying template fallback render",
-            max_retries,
-        )
-        await update_status(
-            "generating_code",
-            0.85,
-            "Switching to a simpler fallback animation...",
-        )
-        fallback_code = generate_fallback_manim_code(plan)
-        fallback_code = inject_speech_service(
-            fallback_code,
-            voice_id,
-            voice_provider,
-            scene_durations=scene_durations,
-        )
-        await update_status(
-            "rendering",
-            0.9,
-            "Rendering fallback animation...",
-        )
-        success, result, stderr = await render_manim_scene(
-            code=fallback_code,
-            quality=quality,
-        )
-        if success:
-            if narration_segments:
-                provider_label = (
-                    "Kokoro" if voice_provider == "kokoro" else "ElevenLabs"
-                )
-                await update_status(
-                    "finalizing",
-                    0.95,
-                    f"Merging {provider_label} narration with the video...",
-                )
-                merged_audio_path = build_narration_track(narration_segments)
-                return await merge_audio_with_video(result, merged_audio_path)
-            return result
-        last_result = result
-        last_stderr = stderr
 
         # Include stderr for diagnosis
         detail = last_stderr or last_result
