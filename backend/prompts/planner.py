@@ -21,6 +21,9 @@ equations to draw. Be precise about coordinates, colors, transformations.",
 }
 
 PLANNING RULES:
+- Your only job is to explain what the user actually asked. Do NOT extend the topic, add related topics, or "improve" the scope beyond the user's request.
+- Every factual claim in narration_text and concept_summary must be mathematically correct. If you are not sure a claim is true, omit it or qualify it carefully instead of guessing.
+- concept_summary must begin by restating the user's question or topic faithfully in your own words before summarizing it.
 - Choose the number of scenes that fits the concept — a quick identity might need 2, \
 an involved proof or derivation might need 7 or more. Prefer fewer scenes for simple \
 ideas and more for layered ones. Never pad; every scene must earn its place.
@@ -44,6 +47,7 @@ punchy scenes with longer explanatory ones when it helps clarity.
 idea is re-seen from a new angle and suddenly becomes intuitive.
 - At least one later scene should address a likely misconception, failed intuition, or wrong \
 first guess, then show visually why it fails.
+- The misconception scene must use a real, well-known misunderstanding for the topic. If you cannot identify a genuine common mistake confidently, replace that scene with a worked example, boundary case, or contrast scene instead of inventing one.
 - Do not introduce formal notation or a general formula until the viewer has already seen the \
 meaning through motion, geometry, or a concrete example.
 - Close by making the core insight visually unmistakable — this might be a final state, a \

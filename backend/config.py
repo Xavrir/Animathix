@@ -3,10 +3,14 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
+    POLLINATIONS_API_KEY: str = ""
     ELEVENLABS_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
 
+    LLM_BASE_URL: str = "https://openrouter.ai/api/v1"
     LLM_MODEL: str = "qwen/qwen3-coder:free"
+    PLANNER_MODEL: str = ""
+    CODER_MODEL: str = ""
     MANIM_QUALITY: str = "medium_quality"
     MEDIA_DIR: str = "./media"
     MAX_RETRIES: int = 3

@@ -45,6 +45,7 @@ async def generate_video(
 
     # Step 2: Generate and render with retry loop
     video_path = await _generate_and_render(
+        original_content=request.content,
         plan=plan,
         voice_id=request.voice_id,
         voice_provider=request.voice_provider,
@@ -57,6 +58,7 @@ async def generate_video(
 
 
 async def _generate_and_render(
+    original_content: str,
     plan: NarrationPlan,
     voice_id: str,
     voice_provider: str,
@@ -110,7 +112,11 @@ async def _generate_and_render(
                     "Generating animation code...",
                 )
 
-            code = await generate_manim_code(plan, error_context=error_context)
+            code = await generate_manim_code(
+                original_content,
+                plan,
+                error_context=error_context,
+            )
 
             if narration_task is not None and narration_segments is None:
                 narration_segments = await narration_task

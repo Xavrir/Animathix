@@ -39,3 +39,8 @@ app.include_router(voices.router)
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "service": "animathix-api"}

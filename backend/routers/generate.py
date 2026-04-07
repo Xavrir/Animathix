@@ -130,7 +130,7 @@ async def _run_generation(job_id: str, request: GenerateRequest) -> None:
         )
     except Exception as exc:
         logger.exception("Generation failed for job %s", job_id)
-        error_detail = str(exc)
+        error_detail = str(exc).strip() or exc.__class__.__name__
         if len(error_detail) > 300:
             error_detail = error_detail[:300] + "..."
         update_job(

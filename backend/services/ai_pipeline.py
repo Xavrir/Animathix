@@ -71,22 +71,26 @@ def _extract_message_content(response) -> str:
 
 async def _request_completion(
     *,
+    model: str,
     messages: list[dict[str, str]],
     temperature: float,
     max_tokens: int,
+    extra_kwargs: dict | None = None,
 ):
     client = _get_client()
     last_error: Exception | None = None
+    extra_kwargs = extra_kwargs or {}
 
     for attempt in range(5):
         try:
             return await asyncio.to_thread(
                 client.chat.completions.create,
-                model=settings.LLM_MODEL,
+                model=model,
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 timeout=settings.OPENROUTER_TIMEOUT,
+                **extra_kwargs,
             )
         except RETRYABLE_OPENROUTER_ERRORS as exc:
             last_error = exc
@@ -483,9 +487,10 @@ def generate_fallback_plan(content: str) -> NarrationPlan:
 def _get_client() -> OpenAI:
     global _client
     if _client is None:
+        api_key = settings.POLLINATIONS_API_KEY or settings.OPENROUTER_API_KEY
         _client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=settings.OPENROUTER_API_KEY,
+            base_url=settings.LLM_BASE_URL,
+            api_key=api_key,
         )
     return _client
 
@@ -498,14 +503,28 @@ async def generate_plan(content: str) -> NarrationPlan:
         {"role": "system", "content": PLANNER_SYSTEM_PROMPT},
         {"role": "user", "content": content},
     ]
+    planner_model = settings.PLANNER_MODEL or settings.LLM_MODEL
+    planner_extra_kwargs = {}
+    if "pollinations.ai" in settings.LLM_BASE_URL and planner_model == "qwen-large":
+        planner_extra_kwargs["reasoning_effort"] = "low"
     last_error: Exception | None = None
 
     for attempt in range(3):
-        response = await _request_completion(
-            messages=messages,
-            temperature=0.2,
-            max_tokens=2048,
-        )
+        try:
+            response = await asyncio.wait_for(
+                _request_completion(
+                    model=planner_model,
+                    messages=messages,
+                    temperature=0.2,
+                    max_tokens=2048,
+                    extra_kwargs=planner_extra_kwargs,
+                ),
+                timeout=settings.OPENROUTER_TIMEOUT + 15,
+            )
+        except asyncio.TimeoutError as exc:
+            raise RuntimeError(
+                f"Planner model {planner_model} timed out after {settings.OPENROUTER_TIMEOUT + 15}s"
+            ) from exc
         raw = _extract_message_content(response)
         logger.info("Plan generated, parsing JSON response (attempt %d)", attempt + 1)
 
@@ -537,11 +556,15 @@ async def generate_plan(content: str) -> NarrationPlan:
 
 
 async def generate_manim_code(
+    original_content: str,
     plan: NarrationPlan,
     error_context: str | None = None,
 ) -> str:
     """Call Qwen via OpenRouter to generate Manim code from a narration plan."""
-    user_message = f"Generate Manim code for this narration plan:\n\n{plan.model_dump_json(indent=2)}"
+    user_message = (
+        f"The user's original request was:\n{original_content}\n\n"
+        f"Generate Manim code for this narration plan:\n\n{plan.model_dump_json(indent=2)}"
+    )
 
     if error_context:
         user_message += (
@@ -556,14 +579,25 @@ async def generate_manim_code(
         "yes" if error_context else "no",
     )
 
-    response = await _request_completion(
-        messages=[
-            {"role": "system", "content": CODER_SYSTEM_PROMPT},
-            {"role": "user", "content": user_message},
-        ],
-        temperature=0.4,
-        max_tokens=3000,
-    )
+    coder_model = settings.CODER_MODEL or settings.LLM_MODEL
+
+    try:
+        response = await asyncio.wait_for(
+            _request_completion(
+                model=coder_model,
+                messages=[
+                    {"role": "system", "content": CODER_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_message},
+                ],
+                temperature=0.15,
+                max_tokens=3000,
+            ),
+            timeout=settings.OPENROUTER_TIMEOUT + 45,
+        )
+    except asyncio.TimeoutError as exc:
+        raise RuntimeError(
+            f"Coder model {coder_model} timed out after {settings.OPENROUTER_TIMEOUT + 45}s"
+        ) from exc
 
     code = _extract_message_content(response)
 
